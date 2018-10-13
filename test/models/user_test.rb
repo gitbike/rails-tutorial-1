@@ -69,4 +69,9 @@ class UserTest < ActiveSupport::TestCase
     @user.password = @user.password_confirmation = 'a' * 5
     assert_not @user.valid?
   end
+
+  # 複数ブラウザでログアウトした時のためのテスト
+  test 'authenticated? should return false for a user with no digest' do
+    assert_not @user.authenticated?('')
+  end
 end

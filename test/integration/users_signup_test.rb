@@ -18,6 +18,7 @@ class UsersSignupTest < ActionDispatch::IntegrationTest
 
   test 'valid signup information' do
     get signup_path
+    # 第2引数の「1」 はブロック内のコードを実行する前と後でデータベースのレコードが1増えていることを意味する
     assert_difference 'User.count', 1 do
       post users_path, params: { user: { name: 'Example User',
                                          email: 'user@example.com',
