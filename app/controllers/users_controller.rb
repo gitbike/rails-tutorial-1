@@ -1,13 +1,18 @@
 class UsersController < ApplicationController
+  before_action :logged_in_user, only: [:index, :edit, :update, :destroy]
+  before_action :correct_user, only: [:edit, :update]
+  before_action :admin_user, only: :destroy
+
+  def index
+    @users = User.paginate(page: params[:page])
+  end
 
   def show
     @user = User.find(params[:id])
-    # debugger
   end
-  
+
   def new
     @user = User.new
-    # debugger
   end
 
   def create
@@ -21,8 +26,49 @@ class UsersController < ApplicationController
     end
   end
 
+  def edit
+  end
+
+  def update
+    if @user.update_attributes(user_params)
+      flash[:success] = 'Profile updated'
+      redirect_to @user
+    else
+      render 'edit'
+    end
+  end
+
+  def destroy
+    User.find(params[:id]).destroy
+    flash[:success] = 'User deleted.'
+    redirect_to users_url
+  end
+
+  # Web経由で外部のユーザーが利用できないようにprivate化する
   private
+    # マスアサインメント脆弱性対策として、User.new(params[:user])はデフォルトで使用禁止になっている
+    # 適切に初期化されたparamsハッシュ(Strong Parameters)をcreateアクションやupdateアクションに返すためのメソッド
     def user_params
-      params.require(:user).permit(:name, :email, :password, :password_confirmation) 
+      params.require(:user).permit(:name, :email, :password, :password_confirmation)
+    end
+
+    # ログインしてないとできないアクションをした場合、login画面に転送するbeforeフィルター
+    def logged_in_user
+      unless logged_in?
+        store_location
+        flash[:danger] = 'Please log in.'
+        redirect_to login_url
+      end
+    end
+
+    # editとupdateアクションで自分のページ以外編集できないようにするためのbeforeフィルター
+    def correct_user
+      @user = User.find(params[:id])
+      redirect_to root_url unless current_user?(@user)
+    end
+
+    # adminでなければdestroyアクションを実行できないようにするためのbeforeフィルター
+    def admin_user
+      redirect_to(root_url) unless current_user.admin?
     end
 end
