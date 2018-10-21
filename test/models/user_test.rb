@@ -72,6 +72,6 @@ class UserTest < ActiveSupport::TestCase
 
   # 複数ブラウザでログアウトした時のためのテスト
   test 'authenticated? should return false for a user with no digest' do
-    assert_not @user.authenticated?('')
+    assert_not @user.authenticated?(:remember, '')
   end
 end

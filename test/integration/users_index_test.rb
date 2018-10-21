@@ -4,6 +4,7 @@ class UsersIndexTest < ActionDispatch::IntegrationTest
   def setup
     @admin = users(:michael)
     @non_admin = users(:archer)
+    @non_activated_user = users(:non_activated)
   end
 
   test 'index as non-admin' do
@@ -27,5 +28,14 @@ class UsersIndexTest < ActionDispatch::IntegrationTest
     assert_difference 'User.count', -1 do
       delete user_path(@non_admin)
     end
+  end
+
+  test 'should not allow the not activated attributes' do
+    log_in_as(@non_activated_user)
+    assert_not @non_activated_user.activated?
+    get users_path
+    assert_select 'a[href=?]', user_path(@non_activated_user), count: 0
+    get user_path(@non_activated_user)
+    assert_redirected_to root_url
   end
 end
