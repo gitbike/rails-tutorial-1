@@ -25,7 +25,7 @@ module SessionsHelper
   # @current_userかnilを返す
   def current_user
     # 比較ではなく代入を行ない,セッションが存在するか・クッキーが存在するかで分岐
-    if (user_id = session[:user_id])  # セッションが存在する場合 (存在しない場合はnil=falseになって分岐する)
+    if (user_id = session[:user_id])  # セッションが存在する場合 (存在しない場合はnilの論理値falseになって分岐する)
       @current_user = User.find_by(id: user_id)
     elsif (user_id = cookies.signed[:user_id])  # クッキーが存在する場合
       user = User.find_by(id: user_id)
@@ -66,7 +66,7 @@ module SessionsHelper
     session.delete(:forwarding_url)
   end
 
-  # フレンドリーフォワーディングのためにアクセスしようとしたURLを覚えておく
+  # フレンドリーフォワーディングのため、アクセスしようとしたURLを覚えておく
   def store_location
     # POST PATCH DELETEリクエストで動作しないように、GETリクエストのときだけ動作するようにしておく
     session[:forwarding_url] = request.original_url if request.get?

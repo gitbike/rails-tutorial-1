@@ -1,7 +1,7 @@
 class User < ApplicationRecord
   # rememberメソッドがアクセスできるようにするため、remember_tokenをアクセサに設定
   # activation_tokenはDBに保存されない使い捨てのものなので、ここに設定してcreate_activation_digestがアクセスできるようにする
-  attr_accessor :remember_token, :activation_token
+  attr_accessor :remember_token, :activation_token, :reset_token
 
   before_save :downcase_email
   before_create :create_activation_digest
@@ -39,7 +39,7 @@ class User < ApplicationRecord
   # 渡されたトークンがダイジェストと一致したらtrueを返す
   # 第一引数はremember_digestとactivation_digestに対応できるように抽象化している
   def authenticated?(attribute, token)
-    # 右辺は self.send(:attribute_digest) と同義。モデル内なのでselfは省略可能
+    # 右辺は self.send(:attribute_digest) と同義。モデル内なのでselfは省略可能(Rubyでは、メソッド内でレシーバを省略してメソッドを呼び出すと、暗黙的にselfがレシーバとなる。selfはそのメソッドが属しているインスタンス)
     digest = send("#{attribute}_digest")
     # 複数ブラウザでログアウトしたときにエラーにならないようにするため、片方のブラウザでログアウトしている時(remember_digestがnilのとき)はBCryptを実行しないようにする
     return false if digest.nil?
@@ -54,14 +54,30 @@ class User < ApplicationRecord
   end
 
   def activate
-    # Userモデルの中なのでself.update_attributeのselfを省略できる
     update_columns(activated: true, activated_at: Time.zone.now)
+    # Userモデルの中なのでself.update_attributeのselfを省略できる
     # update_attribute(:activated, true)
     # update_attribute(:activated_at, Time.zone.now)
   end
 
   def send_activation_email
     UserMailer.account_activation(self).deliver_now
+  end
+
+  def create_reset_digest
+    self.reset_token = User.new_token
+    # データベースへの問い合わせを2回から1回にするために、update_attributeではなくupdate_columnsを使っている
+    update_columns(reset_digest: User.digest(reset_token), reset_sent_at: Time.zone.now)
+    # update_attribute(:reset_digest, User.digest(reset_token))
+    # update_attribute(:reset_sent_at, Time.zone.now)
+  end
+
+  def send_password_reset_email
+    UserMailer.password_reset(self).deliver_now
+  end
+
+  def password_reset_expired?
+    reset_sent_at < 2.hours.ago
   end
 
   # Userモデルでしか使わないメソッドは外部に公開する必要がないため、privateにしている
