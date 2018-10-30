@@ -13,8 +13,10 @@ class UsersController < ApplicationController
   def show
     @user = User.find(params[:id])
 
-    # &&だとandよりも優先順位が高く、正常に動作しないのでandを使っている(11章の演習)
-    redirect_to root_url unless @user.activated?
+    # &&だとandよりも優先順位が高く、正常に動作しないのでandを使っている(11章の演習)。 また、redirect_toメソッドはand returnで明示的に終了させないと下のメソッドも次々に実行されてしまう
+    redirect_to root_url and return unless @user.activated?
+
+    @microposts = @user.microposts.paginate(page: params[:page])
   end
 
   def new
@@ -58,14 +60,7 @@ class UsersController < ApplicationController
       params.require(:user).permit(:name, :email, :password, :password_confirmation)
     end
 
-    # ログインしてないとできないアクションをした場合、login画面に転送するbeforeフィルター
-    def logged_in_user
-      unless logged_in?
-        store_location
-        flash[:danger] = 'Please log in.'
-        redirect_to login_url
-      end
-    end
+
 
     # editとupdateアクションで自分のページ以外編集できないようにするためのbeforeフィルター
     def correct_user
