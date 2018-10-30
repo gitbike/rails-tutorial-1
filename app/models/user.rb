@@ -1,4 +1,6 @@
 class User < ApplicationRecord
+  has_many :microposts, dependent: :destroy
+  
   # rememberメソッドがアクセスできるようにするため、remember_tokenをアクセサに設定
   # activation_tokenはDBに保存されない使い捨てのものなので、ここに設定してcreate_activation_digestがアクセスできるようにする
   attr_accessor :remember_token, :activation_token, :reset_token
@@ -78,6 +80,11 @@ class User < ApplicationRecord
 
   def password_reset_expired?
     reset_sent_at < 2.hours.ago
+  end
+
+  def feed
+    # SQLインジェクション対策 ?があることでidがエスケープされる(プリペアドステートメント)
+    Micropost.where('user_id = ?', id)
   end
 
   # Userモデルでしか使わないメソッドは外部に公開する必要がないため、privateにしている
