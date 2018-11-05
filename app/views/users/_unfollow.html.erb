@@ -1,0 +1,4 @@
+<%# form_for()メソッドはRelationshipモデルオブジェクトを操作する。DELETEリクエストをRelationshipsコントローラーに送信している。既存のRelationshipモデルのオブジェクトをfollowed_id外部キー(users表の主キーであるid)で検索し、取り出したオブジェクトに対しdestroyアクションを実行 %>
+<%= form_for(current_user.active_relationships.find_by(followed_id: @user.id), html: { method: :delete }, remote: true) do |f| %>
+  <%= f.submit 'Unfollow', class: 'btn btn-default' %>
+<% end %>
