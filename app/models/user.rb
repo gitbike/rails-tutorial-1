@@ -1,5 +1,13 @@
 class User < ApplicationRecord
   has_many :microposts, dependent: :destroy
+  # Relationshipモデルからactive_relationships表を作っている
+  has_many :active_relationships, class_name: 'Relationship', foreign_key: 'follower_id', dependent: :destroy
+  has_many :passive_relationships, class_name: 'Relationship', foreign_key: 'followed_id', dependent: :destroy
+  # user.followedsは英語として不自然なので、user.followingに書き換えている.配列user.followingはrelationships表のfollowed_idの集合である
+  has_many :following, through: :active_relationships, source: :followed
+  # sourceパラメータを省略してもRailsがfollower_idを探してくれる(上のコードとの類似性を示すために残している).以下のコードによりuser.follersメソッドが使用可能になる
+  has_many :followers, through: :passive_relationships, source: :follower
+
   
   # rememberメソッドがアクセスできるようにするため、remember_tokenをアクセサに設定
   # activation_tokenはDBに保存されない使い捨てのものなので、ここに設定してcreate_activation_digestがアクセスできるようにする
@@ -83,8 +91,32 @@ class User < ApplicationRecord
   end
 
   def feed
+    # 高速化のため、following_idsをDBに計算させる
+    following_ids = 'SELECT followed_id
+                     FROM relationships
+                     WHERE follower_id = :user_id'
+    Micropost.where("user_id IN (#{following_ids})
+                    OR user_id = :user_id", user_id: id)
+
+    # 以下のコードはfollowing_idsをRailsに計算させているので遅い
+    # Micropost.where('user_id IN (?) OR user_id = ?', following_ids, id)
+
+    # 14章で上書き
     # SQLインジェクション対策 ?があることでidがエスケープされる(プリペアドステートメント)
-    Micropost.where('user_id = ?', id)
+    # Micropost.where('user_id = ?', id)
+  end
+
+  # モデルの中ではselfは省略可能
+  def follow(other_user)
+    following << other_user
+  end
+
+  def unfollow(other_user)
+    active_relationships.find_by(followed_id: other_user.id).destroy
+  end
+
+  def following?(other_user)
+    following.include?(other_user)
   end
 
   # Userモデルでしか使わないメソッドは外部に公開する必要がないため、privateにしている
