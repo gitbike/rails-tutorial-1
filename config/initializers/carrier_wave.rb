@@ -1,5 +1,5 @@
 if Rails.env.production?
-  CarrierWave.configure do |congig|
+  CarrierWave.configure do |config|
     config.fog_credentials = {
       :provider => 'AWS',
       :region => EMV['S3_REGION'],
