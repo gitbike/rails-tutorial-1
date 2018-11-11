@@ -92,7 +92,8 @@ Rails.application.configure do
   # 11章
   config.action_mailer.raise_delivery_errors = true
   config.action_mailer.delivery_method = :smtp
-  host = '<your heroku app>.herokuapp.com'
+  # host = '<your heroku app>.herokuapp.com'
+  host = 'immense-taiga-63910.herokuapp.com'
   config.action_mailer.default_url_options = { host: host }
   ActionMailer::Base.smtp_settings = {
     :address        => 'smtp.sendgrid.net',
